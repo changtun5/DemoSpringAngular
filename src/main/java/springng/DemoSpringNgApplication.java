@@ -20,7 +20,7 @@ public class DemoSpringNgApplication implements CommandLineRunner{
     public void run(String...strings) throws Exception{
     	jdbcTemplate.execute("drop table User if exists");
     	jdbcTemplate.execute("create table User ("
-    			+ "id serial, name varchar(255) unique)");
+    			+ "id serial, first varchar(255), last varchar(255))");
     	
     	jdbcTemplate.execute("drop table Task if exists");
     	jdbcTemplate.execute("create table Task ("
