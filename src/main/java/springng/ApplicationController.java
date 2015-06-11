@@ -42,22 +42,35 @@ public class ApplicationController {
 				last, Long.valueOf(userId));
 	}
 	
+	@RequestMapping(value="/users/{userId}/tasks", method=RequestMethod.GET)
+	public List<Task> showUserTask(@PathVariable String userId){
+		return getTasks(Long.valueOf(userId));
+	}
+	
 	@RequestMapping(value="/removeUser/{userId}", method=RequestMethod.POST)
 	public void deleteUser(@PathVariable String userId){
 		jt.update("delete from User where id = ?", Long.valueOf(userId));
 	}
 	
 	@RequestMapping(value="/addTask/{userId}/{task}", method=RequestMethod.POST)
-	public Task insertTask(@PathVariable String userId, @PathVariable String task){
+	public List<Task> insertTask(@PathVariable String userId, @PathVariable String task){
 		jt.update("insert into Task (user, task) values(?,?)",
 				Long.valueOf(userId), task);
-		return getTasks(Long.valueOf(userId), task);
+		return getTaskList();
 	}
 	
 	@RequestMapping(value="/removeTask/{taskId}", method=RequestMethod.POST)
-	public void deleteTask(@PathVariable String taskId){
+	public List<Task> deleteTask(@PathVariable String taskId){
 		jt.update("delete from Task where id = ?", Long.valueOf(taskId));
+		return getTaskList();
 	}
+	
+	@RequestMapping(value="/tasks", method=RequestMethod.GET)
+	public List<Task> showAllTasks(){
+		return getTaskList();
+	}
+	
+	
 	
 	@Autowired
 	JdbcTemplate jt;
@@ -98,7 +111,7 @@ public class ApplicationController {
 		return output;
 	}
 	
-	//get all task
+	//get all task with key as user id
 	public HashMap<Long, ArrayList<Task>> getTasks(){
 		HashMap<Long, ArrayList<Task>> output = new HashMap<Long, ArrayList<Task>>();
 		List<Task> results = jt.query("select * from Task", 
@@ -119,6 +132,33 @@ public class ApplicationController {
 			}
 		}
 		return output;
+	}
+	
+	//get all task
+	public List<Task> getTaskList(){
+		List<Task> results = jt.query("select * from Task order by id desc", 
+				new RowMapper<Task>(){
+			@Override
+			public Task mapRow(ResultSet rs, int rowNum) throws SQLException{
+				return new Task(rs.getLong("id"), rs.getLong("user"),
+						rs.getString("task"));
+			}
+		});
+		return results;
+	}
+	
+	//get task for specific user
+	public List<Task> getTasks(Long userId){
+		List<Task> results = jt.query("select * from Task where user = ?", 
+				new Object[]{userId}, 
+				new RowMapper<Task>(){
+			@Override 
+			public Task mapRow(ResultSet rs, int rowNum) throws SQLException{
+				return new Task(rs.getLong("id"), rs.getLong("user"),
+						rs.getString("task"));
+			}
+		});
+		return results;
 	}
 	
 	//get the combined data of users and its associated tasks
@@ -160,11 +200,11 @@ public class ApplicationController {
 	
 	//get task by task name and user id
 	public Task getTasks(long userId, String name){
-		List<Task> result = jt.query("select * from Task where user = ? and name like ?", 
+		List<Task> result = jt.query("select * from Task where user = ? and task like ?", 
 				new Object[]{userId, name}, new RowMapper<Task>(){
 			@Override
 			public Task mapRow(ResultSet rs, int rowNum) throws SQLException{
-				return new Task(rs.getLong("id"), rs.getLong("user"), rs.getString("name"));
+				return new Task(rs.getLong("id"), rs.getLong("user"), rs.getString("task"));
 			}
 		});
 		
